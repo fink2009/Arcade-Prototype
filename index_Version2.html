@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Arcade Depth — Prototype</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="game.css">
+</head>
+<body>
+  <div id="ui-top">
+    <div id="title">Arcade Depth — Prototype</div>
+    <div id="info">Use ← → or A/D to move, Z / Space to jump, X to fire. Touch or gamepad supported.</div>
+  </div>
+  <canvas id="game" width="1024" height="576"></canvas>
+  <div id="hud">
+    <div id="score">Score: 0</div>
+    <div id="lives">Lives: 3</div>
+    <div id="debug" style="font-family:monospace; font-size:12px"></div>
+  </div>
+  <div id="controls-overlay" aria-hidden="true"></div>
+  <script type="module" src="src/game.js"></script>
+</body>
+</html>
