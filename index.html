@@ -5,19 +5,68 @@
   <title>Arcade Depth — Prototype</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="stylesheet" href="game.css">
+  <style>
+    /* Minimal layout so the visible console is always readable */
+    body{margin:0;background:#15202b;color:#cfe0e8;font-family:Inter,system-ui,monospace}
+    #topbar{padding:14px 18px;background:#0f1a20}
+    #topbar .title{font-weight:700;color:#ffd559}
+    #game-wrap{display:flex;align-items:flex-start;gap:16px;padding:18px}
+    canvas{image-rendering:pixelated;border:10px solid #0e1620; background:transparent; display:block}
+    #status{width:360px;max-height:650px;overflow:auto;background:rgba(0,0,0,0.45);padding:12px;border-radius:8px}
+    #status h3{margin:0 0 8px 0;color:#ffd559}
+    .logline{font-family:monospace;font-size:13px;white-space:pre-wrap;color:#cfe0e8}
+    .error{color:#ff9b9b}
+    #hud{position:fixed;right:12px;top:10px;color:#cfe0e8;background:rgba(0,0,0,0.45);padding:8px;border-radius:6px;font-family:monospace}
+  </style>
 </head>
 <body>
-  <div id="ui-top">
-    <div id="title">Arcade Depth — Prototype</div>
-    <div id="info">Use ← → or A/D to move, Z / Space to jump, X to fire. Touch or gamepad supported.</div>
+  <div id="topbar">
+    <div class="title">Arcade Depth — Prototype</div>
+    <div style="font-size:13px;color:#9fb7c6">Use ← → or A/D to move, Z / Space to jump, X to fire. Touch or gamepad supported.</div>
   </div>
-  <canvas id="game" width="1024" height="576"></canvas>
+
+  <div id="game-wrap">
+    <canvas id="game" width="1024" height="576" aria-label="game canvas"></canvas>
+
+    <div id="status" role="status" aria-live="polite">
+      <h3>Page Console & Status</h3>
+      <div id="console" class="logline">Initializing…</div>
+    </div>
+  </div>
+
   <div id="hud">
     <div id="score">Score: 0</div>
     <div id="lives">Lives: 3</div>
-    <div id="debug" style="font-family:monospace; font-size:12px"></div>
   </div>
+
   <div id="controls-overlay" aria-hidden="true"></div>
+
+  <script>
+    // Small on-page console writer so you can see errors without DevTools
+    (function(){
+      const out = document.getElementById('console');
+      function write(msg, cls){
+        if (!out) return;
+        const line = document.createElement('div');
+        line.className = 'logline' + (cls ? ' '+cls : '');
+        const t = (typeof msg === 'string') ? msg : (msg && msg.stack ? msg.stack : String(msg));
+        line.textContent = t;
+        out.appendChild(line);
+        out.scrollTop = out.scrollHeight;
+      }
+      // Expose write function globally for the game script
+      window.__pageConsole = { write };
+      // Also catch global errors and display
+      window.addEventListener('error', e => {
+        write('ERROR: ' + (e.message || e), 'error');
+      });
+      window.addEventListener('unhandledrejection', e => {
+        write('UNHANDLED PROMISE REJECTION: ' + (e.reason ? (e.reason.message || e.reason) : e), 'error');
+      });
+      write('Page console ready.');
+    })();
+  </script>
+
   <script type="module" src="src/game.js"></script>
 </body>
 </html>
