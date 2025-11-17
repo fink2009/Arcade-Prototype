@@ -1,11 +1,6 @@
-// Updated game.js — loads retro sprites from src/sprites.js and uses them for rendering.
-// Replace your existing src/game.js with this file (commit via GitHub web editor).
-//
-// Notes:
-// - The sprites are generated in-browser (no external image files).
-// - If sprite loading fails, the renderer falls back to rectangles (unchanged behavior).
-// - Animation: player cycles through frames. Enemy and coin use single images.
-// - You can tweak scale by changing loadSprites(scale) invocation.
+// src/game.js
+// Updated game.js to use larger sprites generated in src/sprites.js
+// Paste/replace this file in your repo. Adjust spriteScale for larger/smaller sprites.
 
 import { loadSprites } from './sprites.js';
 
@@ -18,7 +13,7 @@ function pageLog(...args){
     }
   } catch(e){ console.log(...args); }
 }
-pageLog("game.js (retro) loaded");
+pageLog("game.js (metal-ish) loaded");
 
 const canvas = document.getElementById('game');
 const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
@@ -47,7 +42,7 @@ window.addEventListener('keyup', e => {
   if (k === 'x') input.fire = false;
 });
 
-// touch controls
+// touch
 function makeTouchButtons(){
   const overlay = document.getElementById('controls-overlay');
   if (!overlay) return;
@@ -68,7 +63,6 @@ function makeTouchButtons(){
 }
 makeTouchButtons();
 
-// level inline fallback
 let level = null;
 const INLINE_LEVEL = {
   "meta": { "name": "Tutorial Ridge", "gravityZ": 1400 },
@@ -91,6 +85,8 @@ const INLINE_LEVEL = {
 };
 
 const world = { platforms: [], enemies: [], bullets: [], particles: [], collectibles: [] };
+
+// Player default; actual width/height will be set after sprites load
 const player = {
   x:120, y:0, z:0, vx:0, vy:0, vz:0,
   width:36, height:56, speed:320, accel:2200, drag:1200,
@@ -112,42 +108,46 @@ function initLevelFromObject(lvl) {
   pageLog("Initialized level:", level.meta && level.meta.name);
 }
 
-// sprite holder (populated by loadSprites)
 let sprites = null;
-let spriteScale = 4; // same default as in sprites.js
+let spriteScale = 4; // increase to 5 or 6 for chunkier art
 
 async function boot() {
   try {
     sprites = await loadSprites(spriteScale);
-    pageLog("Sprites loaded");
+    pageLog("Sprites generated");
+    // set player size to sprite size so physics & visuals match
+    if (sprites && sprites.player && sprites.player.frames && sprites.player.frames[0]) {
+      const img = sprites.player.frames[0];
+      player.width = img.width;
+      player.height = img.height;
+      pageLog("Player sprite size:", player.width, player.height);
+    }
   } catch(err) {
     pageLog("Sprite load error:", err);
     sprites = null;
   }
 
-  // try to fetch level JSON, fallback to inline
+  // try load JSON level, fallback to inline
   try {
-    pageLog("Attempting to load src/levels/level1.json");
-    const res = await fetch('src/levels/level1.json', {cache: "no-store"});
+    pageLog("Loading level JSON...");
+    const res = await fetch('src/levels/level1.json', {cache:'no-store'});
     if (res.ok) {
       const data = await res.json();
       initLevelFromObject(data);
     } else {
-      pageLog("Level JSON not found or bad status, using inline level");
+      pageLog("Level JSON not found; using inline level.");
       initLevelFromObject(INLINE_LEVEL);
     }
   } catch(err) {
-    pageLog("Level fetch failed, using inline level. Error:", err);
+    pageLog("Level fetch failed; using inline. Error: " + err);
     initLevelFromObject(INLINE_LEVEL);
   }
 
-  // start main loop
   last = performance.now();
   requestAnimationFrame(loop);
 }
-boot(); // start
+boot();
 
-// helpers
 function worldPlatformUnder(x){
   for (const p of world.platforms){
     if (x >= p.x && x <= p.x + p.w) return p;
@@ -188,32 +188,27 @@ function checkBulletHit(b){
   }
 }
 
-// rendering helpers using sprites when available
+// draw helpers
 function drawSpriteImage(img, x, y, z, w, h) {
   if (!img || !ctx) return;
-  // perspective scaling based on z
   const scale = CAMERA_DEPTH / (CAMERA_DEPTH + z);
   const dw = w * scale;
   const dh = h * scale;
   const sx = Math.round(x - camera.x - dw/2 + w/2);
   const sy = Math.round(y - dh + (h - dh));
-  // ensure nearest-neighbor when drawing scaled sprites
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(img, sx, sy, Math.round(dw), Math.round(dh));
   ctx.imageSmoothingEnabled = true;
 }
 
-function drawEntityWithSprite(x,y,z,w,h,img,extra){
+function drawEntityWithSprite(x,y,z,w,h,img){
   if (img) {
     drawSpriteImage(img, x, y, z, w, h);
-    if (extra) extra();
   } else {
-    // fallback rectangle
     const scale = CAMERA_DEPTH / (CAMERA_DEPTH + z);
     const dw = w * scale, dh = h * scale;
     const sx = Math.round(x - camera.x - dw/2 + w/2);
     const sy = Math.round(y - dh + (h - dh));
-    // shadow
     ctx.fillStyle = 'rgba(0,0,0,0.36)';
     ctx.beginPath();
     ctx.ellipse(Math.round(x - camera.x), Math.round((y - z*0.6)+8), 18*scale, 7*scale, 0,0,Math.PI*2);
@@ -223,7 +218,7 @@ function drawEntityWithSprite(x,y,z,w,h,img,extra){
   }
 }
 
-// main update / draw
+// main update/draw loop
 let last = performance.now();
 
 function update(dt){
@@ -233,7 +228,6 @@ function update(dt){
   const jump = input.jump || input.touchJump;
   const fire = input.fire || input.touchFire;
 
-  // movement
   let targetVx = 0;
   if (left) targetVx -= player.speed;
   if (right) targetVx += player.speed;
@@ -247,7 +241,6 @@ function update(dt){
   player.x += player.vx * dt;
   if (player.vx !== 0) player.facing = Math.sign(player.vx);
 
-  // jump / z
   if ((jump && player.grounded) ) {
     player.vz = player.jumpForce;
     player.grounded = false;
@@ -269,12 +262,10 @@ function update(dt){
   }
   player.y = groundYScreen - player.height - player.z * 0.6;
 
-  // camera
   const targetCamX = player.x - W*0.36;
   camera.x += (targetCamX - camera.x) * camera.lerp;
   camera.x = Math.max(-800, Math.min(camera.x, 2200));
 
-  // firing
   player.shotCooldown = Math.max(0, player.shotCooldown - dt);
   if ((fire) && player.shotCooldown <= 0){
     const bx = player.x + player.facing * 28;
@@ -283,7 +274,6 @@ function update(dt){
     player.shotCooldown = 0.28;
   }
 
-  // bullets
   for (const b of world.bullets){
     b.x += b.vx * dt;
     b.z += (b.vz || 0) * dt;
@@ -292,7 +282,6 @@ function update(dt){
   }
   world.bullets = world.bullets.filter(b=>b.ttl>0 && Math.abs(b.x - camera.x) < 3000);
 
-  // enemies AI
   for (const e of world.enemies){
     if (e.dead) continue;
     if (e.type === 'patrol'){
@@ -313,7 +302,6 @@ function update(dt){
     }
   }
 
-  // collectibles
   for (const c of world.collectibles){
     if (c.collected) continue;
     const dx = c.x - player.x;
@@ -335,7 +323,6 @@ function update(dt){
   hudScore && (hudScore.innerText = `Score: ${state.score}`);
   hudLives && (hudLives.innerText = `Lives: ${state.lives}`);
 
-  // animate player timer
   player.animTimer += dt;
 }
 
@@ -343,30 +330,28 @@ function draw(){
   if (!ctx) return;
   ctx.clearRect(0,0,W,H);
 
-  // sky
-  ctx.fillStyle = '#1b2632';
+  // darker sky for retro mood
+  ctx.fillStyle = '#0f1620';
   ctx.fillRect(0,0,W,H);
 
-  // parallax clouds (using generated cloud sprite)
+  // parallax cloud details
   if (sprites && sprites.cloud) {
     ctx.imageSmoothingEnabled = false;
     const cloudImg = sprites.cloud;
     for (let i=-1;i<6;i++){
       const cx = Math.round((i*320) - (camera.x * 0.12 % 320));
-      const cy = 90 + (i%2)*24;
-      ctx.globalAlpha = 0.7;
+      const cy = 80 + (i%2)*24;
+      ctx.globalAlpha = 0.75;
       ctx.drawImage(cloudImg, cx, cy);
       ctx.globalAlpha = 1;
     }
-    ctx.imageSmoothingEnabled = true;
   }
 
-  // ground tiles / platforms
+  // platforms tiled
   for (const p of world.platforms){
     const sx = Math.round(p.x - camera.x);
     const sy = Math.round(p.y - p.z*0.6);
     if (sprites && sprites.ground) {
-      // tile the ground image across the platform width
       const tileW = sprites.ground.width;
       let tx = sx;
       while (tx < sx + p.w) {
@@ -387,7 +372,7 @@ function draw(){
   for (const c of world.collectibles){
     if (c.collected) continue;
     if (sprites && sprites.coin) {
-      drawSpriteImage(sprites.coin, c.x, (c.y - c.z*0.6), c.z, 12, 12);
+      drawSpriteImage(sprites.coin, c.x, (c.y - c.z*0.6), c.z, 16, 16);
     } else {
       const scale = CAMERA_DEPTH / (CAMERA_DEPTH + c.z);
       const w = 12*scale, h = 12*scale;
@@ -400,19 +385,19 @@ function draw(){
     }
   }
 
-  // player
+  // player sprite (select frame)
   const playerSprite = sprites && sprites.player && sprites.player.frames && sprites.player.frames.length
     ? sprites.player.frames[Math.floor((player.animTimer * 8) % sprites.player.frames.length)]
     : null;
-  drawEntityWithSprite(player.x, player.y, player.z, player.width, player.height, playerSprite, null);
+  drawEntityWithSprite(player.x, player.y, player.z, player.width, player.height, playerSprite);
 
   // enemies
   for (const e of world.enemies){
     if (e.dead) {
-      drawEntityWithSprite(e.x, e.y, e.z, 28, 36, null); // corpse fallback
+      drawEntityWithSprite(e.x, e.y, e.z, 28, 36, null);
       continue;
     }
-    drawEntityWithSprite(e.x, e.y, e.z, 28, 36, sprites ? sprites.enemy : null);
+    drawEntityWithSprite(e.x, e.y, e.z, sprites && sprites.enemy ? sprites.enemy.width : 28, sprites && sprites.enemy ? sprites.enemy.height : 36, sprites ? sprites.enemy : null);
   }
 
   // bullets
@@ -441,7 +426,7 @@ function loop(now){
   requestAnimationFrame(loop);
 }
 
-// gamepad polling
+// gamepad
 function pollGamepad(){
   const gps = navigator.getGamepads ? navigator.getGamepads() : [];
   if (gps && gps[0]){
@@ -455,4 +440,4 @@ function pollGamepad(){
 }
 pollGamepad();
 
-pageLog("Retro game code loaded. Sprites will appear shortly if generated successfully.");
+pageLog("Sprites will be visible once generated. Adjust spriteScale in src/game.js to change chunkiness.");
