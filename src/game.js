@@ -25,6 +25,7 @@ const hudLives = document.getElementById('lives');
 const state = { score: 0, lives: 3, paused: false };
 const camera = { x: 0, y: 0, width: W, height: H, lerp: 0.08 };
 const input = { left:false, right:false, jump:false, fire:false, touchLeft:false, touchRight:false, touchJump:false, touchFire:false };
+const ENEMY_KILL_SCORE = 150;
 
 window.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
@@ -166,7 +167,7 @@ function checkBulletHit(b){
       const dz = Math.abs(b.z - (e.z||0));
       if (Math.abs(dx) < 30 && dz < 40){
         e.dead = true;
-        state.score += 150;
+        state.score += ENEMY_KILL_SCORE;
         spawnParticle(e.x - camera.x, e.y - 8, 0.8, '#ff6e6e');
         b.ttl = 0;
         return;
@@ -441,3 +442,76 @@ function pollGamepad(){
 pollGamepad();
 
 pageLog("Sprites will be visible once generated. Adjust spriteScale in src/game.js to change chunkiness.");
+
+// Dev Tools Setup
+const DEV_SECRET_CODE = 'KILLALL';
+let devToolsUnlocked = false;
+
+function setupDevTools() {
+  const settingsToggle = document.getElementById('settings-toggle');
+  const settingsPanel = document.getElementById('settings-panel');
+  const settingsClose = document.getElementById('settings-close');
+  const devCodeInput = document.getElementById('dev-code');
+  const devCodeSubmit = document.getElementById('dev-code-submit');
+  const devToolsDiv = document.getElementById('dev-tools');
+  const killAllBtn = document.getElementById('kill-all-btn');
+
+  // Validate all required elements exist
+  if (!settingsToggle || !settingsPanel || !settingsClose || 
+      !devCodeInput || !devCodeSubmit || !devToolsDiv || !killAllBtn) {
+    return;
+  }
+
+  settingsToggle.addEventListener('click', () => {
+    settingsPanel.classList.remove('hidden');
+    state.paused = true;
+  });
+
+  settingsClose.addEventListener('click', () => {
+    settingsPanel.classList.add('hidden');
+    state.paused = false;
+  });
+
+  devCodeSubmit.addEventListener('click', () => {
+    const code = devCodeInput.value.trim().toUpperCase();
+    if (code === DEV_SECRET_CODE) {
+      devToolsUnlocked = true;
+      devToolsDiv.classList.remove('hidden');
+      devCodeInput.value = '';
+      pageLog('[DEV] Dev tools unlocked!');
+    } else {
+      devCodeInput.value = '';
+      pageLog('[DEV] Invalid code');
+    }
+  });
+
+  devCodeInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') devCodeSubmit.click();
+  });
+
+  killAllBtn.addEventListener('click', () => {
+    killAllEnemies();
+    settingsPanel.classList.add('hidden');
+    state.paused = false;
+  });
+}
+
+function killAllEnemies() {
+  let killedCount = 0;
+  for (const e of world.enemies) {
+    if (!e.dead) {
+      e.dead = true;
+      killedCount++;
+      state.score += ENEMY_KILL_SCORE;
+      spawnExplosion(e.x, e.y, e.z || 0);
+    }
+  }
+  pageLog(`[DEV] Killed ${killedCount} enemies!`);
+}
+
+// Initialize dev tools after DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupDevTools);
+} else {
+  setupDevTools();
+}

@@ -18,6 +18,99 @@ canvas{image-rendering:pixelated;border:10px solid #0e1620; background:transpare
 .touch-jump{right:120px;bottom:24px}
 .touch-fire{right:24px;bottom:24px}
 .debug{position:fixed;left:12px;bottom:12px;color:#9fb7c6;font-family:monospace;font-size:12px}
+
+/* Settings Panel Styles */
+.settings-toggle{
+  position:fixed;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--panel);
+  border:none;
+  border-radius:8px;
+  padding:8px 14px;
+  font-size:20px;
+  cursor:pointer;
+  z-index:100;
+}
+.settings-toggle:hover{background:rgba(0,0,0,0.65)}
+
+.settings-panel{
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:200;
+}
+.settings-panel.hidden{display:none}
+
+.settings-content{
+  background:var(--bg);
+  border:2px solid var(--accent);
+  border-radius:12px;
+  padding:24px;
+  min-width:280px;
+  max-width:400px;
+  text-align:center;
+  color:var(--muted);
+  font-family:Inter,system-ui,monospace;
+}
+.settings-content h2{color:var(--accent);margin:0 0 16px 0}
+.settings-content h3{color:var(--accent);margin:12px 0 8px 0;font-size:14px}
+
+.settings-section{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:16px;
+}
+.settings-section label{font-size:12px;text-align:left}
+.settings-section input{
+  padding:8px;
+  border:1px solid var(--accent);
+  border-radius:4px;
+  background:rgba(0,0,0,0.5);
+  color:var(--muted);
+  font-family:monospace;
+  font-size:14px;
+}
+.settings-section input:focus{outline:none;border-color:#6ee6ff}
+
+#dev-code-submit,#settings-close{
+  padding:8px 16px;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+  font-family:monospace;
+  font-size:13px;
+  margin-top:8px;
+}
+#dev-code-submit{background:var(--accent);color:#000}
+#dev-code-submit:hover{background:#ffe680}
+#settings-close{background:#444;color:var(--muted);margin-left:8px}
+#settings-close:hover{background:#555}
+
+.dev-tools{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,213,89,0.3)}
+.dev-tools.hidden{display:none}
+
+.kill-all-button{
+  background:#ff4444;
+  color:#fff;
+  border:none;
+  border-radius:6px;
+  padding:12px 24px;
+  font-size:14px;
+  font-weight:bold;
+  cursor:pointer;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  transition:all 0.2s;
+}
+.kill-all-button:hover{background:#ff6666;transform:scale(1.05)}
+.kill-all-button:active{transform:scale(0.95)}
+
 /* Pixel-perfect canvas + optional CRT scanlines overlay */
 canvas {
   image-rendering: pixelated;
