@@ -41,6 +41,24 @@
 
   <div id="controls-overlay" aria-hidden="true"></div>
 
+  <!-- Settings Panel -->
+  <div id="settings-panel" class="settings-panel hidden">
+    <div class="settings-content">
+      <h2>Settings</h2>
+      <div class="settings-section">
+        <label for="dev-code">Dev Code:</label>
+        <input type="text" id="dev-code" placeholder="Enter secret code..." autocomplete="off" />
+        <button id="dev-code-submit">Submit</button>
+      </div>
+      <div id="dev-tools" class="dev-tools hidden">
+        <h3>Dev Tools</h3>
+        <button id="kill-all-btn" class="kill-all-button">Kill All Enemies</button>
+      </div>
+      <button id="settings-close">Close</button>
+    </div>
+  </div>
+  <button id="settings-toggle" class="settings-toggle">⚙️</button>
+
   <script>
     // Small on-page console writer so you can see errors without DevTools
     (function(){
